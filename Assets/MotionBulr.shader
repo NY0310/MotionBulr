@@ -29,24 +29,31 @@
             {
                 float4 vertex: SV_POSITION;
                 float3 velocity: TEXCOORD1;
+                float2 uv: TEXCOORD;
             };
             
-            float4x4 _PrevMatrix;
+            uniform float4x4 _PrevMatrix;
+            uniform float4x4 _NowMatrix;
             
             v2f vert(appdata v)
             {
                 v2f o;
-                o.vertex = UnityObjectToClipPos(v.vertex);
                 float4 prevPos = mul(_PrevMatrix, v.vertex);
-                o.velocity = o.vertex.xyz / o.vertex.w - prevPos.xyz / prevPos.w;
-               // o.velocity *= 1;// 画面サイズを1.0としたUV座標系での速度に変換
+                o.vertex = mul(_NowMatrix, v.vertex);
+                o.vertex = UnityObjectToClipPos(v.vertex);
+                
+                //o.velocity = o.vertex.xyz / o.vertex.w - prevPos.xyz / prevPos.w;
+                o.velocity = 0;
+                o.velocity.x = o.vertex.x / o.vertex.w - prevPos.x / prevPos.w;
+                o.uv = v.uv;
                 return o;
             }
             
             fixed4 frag(v2f i): SV_Target
             {
+                return 1;
                 fixed4 col = fixed4(i.velocity, length(i.velocity));
-           
+            
 
                 return col;
             }
@@ -83,7 +90,7 @@
             fixed4 frag(appdata i): SV_Target
             {
                 float4 speed = tex2D(_SpeedMap, i.uv);
-          
+                return speed;
                 // 露光時間比
                 const float exp_rate = 0.8; 
                 if(speed.a <= 0.1)                
